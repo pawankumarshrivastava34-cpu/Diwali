@@ -1,0 +1,759 @@
+<!doctype html>
+<html data-saved="">
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link id="icon-font" rel="stylesheet"
+        href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.42.0/dist/tabler-icons.min.css" media="print"
+        onload="this.media='all'">
+
+    <noscript>
+        <link id="icon-font" rel="stylesheet"
+            href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.42.0/dist/tabler-icons.min.css">
+    </noscript>
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+    <svg style="position:absolute;width:0;height:0" aria-hidden="true">
+
+        <defs>
+            <marker id="arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6"
+                orient="auto-start-reverse">
+                <path d="M2 1L8 5L2 9" fill="none" stroke="context-stroke" stroke-width="1.5" stroke-linecap="round"
+                    stroke-linejoin="round"></path>
+            </marker>
+        </defs>
+    </svg>
+    <div id="vis-container">
+        <h2 class="sr-only">Second preview: night sky over a university building with garland lights, large layered
+            fireworks, diyas on the ground, a logo placeholder and the greeting Shubh Deepawali.</h2>
+        <div style="background:var(--surface-1);border-radius:12px;padding:12px;">
+            <div id="w"
+                style="position:relative;height:460px;border-radius:8px;overflow:hidden;background:#04060f;cursor:pointer;">
+                <canvas id="a" style="position:absolute;inset:0;width:100%;height:100%"></canvas>
+                <canvas id="b" style="position:absolute;inset:0;width:100%;height:100%"></canvas>
+                <canvas id="d" style="position:absolute;inset:0;width:100%;height:100%"></canvas>
+                <img src="./shobhit.jpeg" id="shobhit-logo" alt="Shobhit University Logo">
+            </div>
+            <div style="display:none;">
+                <button id="snd">Awaaz chalu karo</button>
+                <button id="nw">Naya patakha</button>
+            </div>
+        </div>
+        <script>
+            const cvs = ['a', 'b', 'd'].map(i => document.getElementById(i)), [g1, g2, g3] = cvs.map(c => c.getContext('2d')), w = document.getElementById('w');
+            let W, H, BY, D = Math.min(2, devicePixelRatio || 1);
+            function size() { const r = w.getBoundingClientRect(); W = r.width; H = r.height; BY = H - 40; cvs.forEach(c => { c.width = W * D; c.height = H * D });[g1, g2, g3].forEach(g => g.setTransform(D, 0, 0, D, 0, 0)); }
+            size(); addEventListener('resize', size);
+            const R = (a, b) => a + Math.random() * (b - a), T = Math.PI * 2;
+            const pal = [['#ffd36b', '#ff9d2e'], ['#ff4b5c', '#ff9aa5'], ['#5cf2a6', '#2fbf9b'], ['#a58bff', '#e0d6ff'], ['#ffffff', '#ffe29a'], ['#ff7a18', '#ffd60a'], ['#4cc9f0', '#b8ecff']];
+            // const logo = new Image();
+            const logo = new Image();
+
+            // logo.src = "./shobhit.jpeg";
+
+            logo.onload = () => {
+                console.log("Shobhit University Logo Loaded!");
+            };
+
+            logo.onerror = () => {
+                console.log("Logo load nahi hua!");
+            };
+
+            const stars = Array.from({ length: 130 }, () => ({ x: Math.random(), y: Math.random(), r: R(.8, 1.8), sp: R(.5, 2), p: R(0, 6) }));
+            let rockets = [], parts = [], flash = { x: 0, y: 0, c: '#fff', a: 0 };
+            
+let diwaliTexts = [];
+
+function showDiwaliText(x, y) {
+    const messages = [
+        "Happy Diwali ✨",
+        "शुभ दीपावली 🪔",
+        "✨ Happy Diwali ✨",
+        "खुशियों वाली दिवाली",
+        "Spread Happiness ❤️"
+    ];
+
+    diwaliTexts.push({
+        text: messages[Math.floor(Math.random() * messages.length)],
+        x: x,
+        y: y - 25,
+        life: 100,
+        maxLife: 100,
+        size: 18 + Math.random() * 5
+    });
+}
+
+function drawDiwaliText() {
+    g3.save();
+    g3.textAlign = "center";
+    g3.textBaseline = "middle";
+
+    for (let i = diwaliTexts.length - 1; i >= 0; i--) {
+        const t = diwaliTexts[i];
+
+        const alpha = t.life / t.maxLife;
+
+        g3.globalAlpha = alpha;
+        g3.font = `bold ${t.size}px "Nirmala UI", Arial`;
+
+        g3.shadowColor = "#ffd700";
+        g3.shadowBlur = 18;
+
+        g3.fillStyle = "#fff2b0";
+        g3.fillText(t.text, t.x, t.y);
+
+        t.y -= 0.12;
+        t.life--;
+
+        if (t.life <= 0) {
+            diwaliTexts.splice(i, 1);
+        }
+    }
+
+    g3.restore();
+}
+
+            let ac = null, on = false;
+
+            // DIWALI BACKGROUND MUSIC
+
+// BACKGROUND DIWALI MUSIC
+const diwaliMusic = new Audio();
+
+diwaliMusic.src = "./diwali-music.mp3";
+diwaliMusic.loop = true;
+diwaliMusic.volume = 0.5;
+diwaliMusic.preload = "auto";
+
+async function playDiwaliMusic() {
+    try {
+        await diwaliMusic.play();
+        console.log("Diwali music started!");
+    } catch (error) {
+        console.error("Music Error:", error);
+    }
+}
+
+            function nb(d) {
+                const b = ac.createBuffer(1, ac.sampleRate * d, ac.sampleRate);
+                const a = b.getChannelData(0);
+
+                for (let i = 0; i < a.length; i++) {
+                    a[i] = Math.random() * 2 - 1;
+                }
+
+                return b;
+            }
+
+            function snd(k, x, type = 'peony') {
+
+    if (!on || !ac || ac.state !== 'running') return;
+
+    try {
+        const t = ac.currentTime;
+
+        const pan = ac.createStereoPanner();
+        pan.pan.value = Math.max(-1, Math.min(1, x / W * 2 - 1)) * 0.8;
+        pan.connect(ac.destination);
+
+        function tone(freq1, freq2, duration, volume, wave = 'sine', delay = 0) {
+            const o = ac.createOscillator();
+            const g = ac.createGain();
+
+            o.type = wave;
+            o.frequency.setValueAtTime(freq1, t + delay);
+            o.frequency.exponentialRampToValueAtTime(
+                Math.max(1, freq2),
+                t + delay + duration
+            );
+
+            g.gain.setValueAtTime(0.001, t + delay);
+            g.gain.linearRampToValueAtTime(volume, t + delay + 0.02);
+            g.gain.exponentialRampToValueAtTime(
+                0.001,
+                t + delay + duration
+            );
+
+            o.connect(g);
+            g.connect(pan);
+
+            o.start(t + delay);
+            o.stop(t + delay + duration + 0.02);
+        }
+
+        function noise(duration, volume, cutoff, filterType, delay = 0) {
+            const s = ac.createBufferSource();
+            s.buffer = nb(duration);
+
+            const f = ac.createBiquadFilter();
+            f.type = filterType;
+            f.frequency.setValueAtTime(cutoff, t + delay);
+
+            const g = ac.createGain();
+
+            g.gain.setValueAtTime(0.001, t + delay);
+            g.gain.linearRampToValueAtTime(volume, t + delay + 0.02);
+            g.gain.exponentialRampToValueAtTime(
+                0.001,
+                t + delay + duration
+            );
+
+            s.connect(f);
+            f.connect(g);
+            g.connect(pan);
+
+            s.start(t + delay);
+            s.stop(t + delay + duration);
+        }
+
+        // ROCKET LAUNCH: rising whistle
+        if (k === 'launch') {
+            tone(180, 1000, 0.65, 0.045, 'sawtooth');
+            noise(0.35, 0.018, 2400, 'highpass', 0.1);
+            return;
+        }
+
+        // PEONY: deep powerful boom
+        if (type === 'peony') {
+            noise(0.9, 0.32, 850, 'lowpass');
+            tone(100, 35, 0.65, 0.22, 'triangle');
+            noise(0.15, 0.09, 3500, 'highpass');
+        }
+
+        // CHRYSANTHEMUM: bright crackling
+        else if (type === 'chrys') {
+            noise(0.9, 0.18, 4000, 'highpass');
+            tone(650, 180, 0.5, 0.07, 'triangle');
+
+            for (let i = 0; i < 18; i++) {
+                noise(0.04, 0.055, 4500, 'highpass', i * 0.045);
+            }
+        }
+
+        // WILLOW: long soft golden rumble
+        else if (type === 'willow') {
+            noise(1.6, 0.20, 1600, 'lowpass');
+            tone(120, 45, 1.3, 0.12, 'sine');
+        }
+
+        // RING: sharp magical pop
+        else if (type === 'ring') {
+            tone(950, 180, 0.65, 0.16, 'sine');
+            noise(0.25, 0.13, 3200, 'highpass');
+        }
+
+        // DOUBLE: two consecutive explosions
+        else if (type === 'double') {
+            noise(0.5, 0.25, 900, 'lowpass');
+            tone(110, 40, 0.4, 0.18, 'triangle');
+            noise(0.5, 0.22, 900, 'lowpass', 0.25);
+            tone(130, 40, 0.4, 0.15, 'triangle', 0.25);
+        }
+
+        // HEART: soft magical sparkle
+        else if (type === 'heart') {
+            tone(900, 350, 0.7, 0.11, 'sine');
+            tone(1200, 650, 0.5, 0.07, 'sine', 0.1);
+            noise(0.4, 0.07, 5000, 'highpass');
+        }
+
+        // STAR: bright sharp burst
+        else if (type === 'star') {
+            tone(1400, 250, 0.45, 0.13, 'square');
+            noise(0.3, 0.12, 5000, 'highpass');
+        }
+
+        // PALM: deep golden explosion
+        else if (type === 'palm') {
+            noise(1.3, 0.28, 1200, 'lowpass');
+            tone(85, 30, 0.9, 0.2, 'triangle');
+
+            for (let i = 0; i < 10; i++) {
+                noise(0.05, 0.06, 4200, 'highpass', i * 0.09);
+            }
+        }
+
+        // SPIRAL: rising magical sweep
+        else if (type === 'spiral') {
+            tone(250, 1600, 0.9, 0.10, 'sine');
+            noise(0.7, 0.12, 3500, 'highpass');
+        }
+
+        // GALAXY: layered shimmering sound
+        else if (type === 'galaxy') {
+            tone(500, 1000, 0.8, 0.10, 'sine');
+            tone(800, 300, 1, 0.08, 'triangle', 0.08);
+            noise(0.8, 0.12, 5000, 'highpass');
+        }
+
+        // COMET: sharp shooting sound
+        else if (type === 'comet') {
+            tone(1200, 180, 0.55, 0.13, 'sawtooth');
+            noise(0.5, 0.15, 2800, 'highpass');
+        }
+
+        // FOUNTAIN: continuous sparkling shower
+        else if (type === 'fountain') {
+            noise(1.1, 0.22, 4500, 'highpass');
+            tone(400, 120, 0.9, 0.10, 'sine');
+
+            for (let i = 0; i < 15; i++) {
+                noise(0.045, 0.045, 5000, 'highpass', i * 0.055);
+            }
+        }
+
+    } catch (e) {
+        console.log('Audio error:', e);
+    }
+}
+            function launch(x, ty) {
+
+    x = x ?? R(.1, .9) * W;
+
+    const types = [
+        'peony', 'chrys', 'willow', 'ring',
+        'double', 'heart', 'star', 'palm',
+        'spiral', 'galaxy', 'comet', 'fountain'
+    ];
+
+    const type = types[Math.floor(Math.random() * types.length)];
+
+    const c = pal[Math.floor(Math.random() * pal.length)];
+
+    rockets.push({
+        x,
+        y: BY,
+        ty: ty ?? R(.1, .4) * H,
+        vy: -R(6.5, 7.5),
+        c,
+        type
+    });
+
+    snd('launch', x, type);
+}
+            function burst(x, y, c, type) {
+                const P = (vx, vy, col, life, g = .03, dr = .985, wd = 1.6, crk = 0, tw = 0) => parts.push({ x, y, px: x, py: y, vx, vy, col, life, max: life, g, dr, w: wd, crk, tw });
+                const col = () => c[Math.random() < .5 ? 0 : 1];
+                snd('boom', x, type);
+                if (type === 'peony') for (let i = 0; i < 140; i++) { const a = i / 140 * T + R(-.03, .03), s = R(3.3, 3.8); P(Math.cos(a) * s, Math.sin(a) * s, col(), R(65, 80), .03, .984, 1.8); }
+                if (type === 'chrys') for (let i = 0; i < 180; i++) { const a = R(0, T), s = R(1, 4.4); P(Math.cos(a) * s, Math.sin(a) * s, c[0], R(80, 110), .02, .98, 1.4, Math.random() < .18, 1); }
+                if (type === 'willow') for (let i = 0; i < 110; i++) { const a = i / 110 * T + R(-.03, .03), s = R(2.4, 3); P(Math.cos(a) * s, Math.sin(a) * s, '#ffcf5a', R(130, 170), .022, .988, 1.5, 0, 1); }
+                if (type === 'ring' || type === 'double') { for (let i = 0; i < 56; i++) { const a = i / 56 * T; P(Math.cos(a) * 3.6, Math.sin(a) * 3.6, c[0], R(60, 75), .02, .982, 1.8); } if (type === 'double') for (let i = 0; i < 36; i++) { const a = i / 36 * T; P(Math.cos(a) * 2, Math.sin(a) * 2, c[1], R(60, 75), .02, .982, 1.8); } }
+                if (type === 'heart') for (let i = 0; i < 90; i++) { const a = i / 90 * T, hx = 16 * Math.pow(Math.sin(a), 3), hy = -(13 * Math.cos(a) - 5 * Math.cos(2 * a) - 2 * Math.cos(3 * a) - Math.cos(4 * a)); P(hx * .2, hy * .2, '#ff5a7a', R(70, 85), .01, .965, 1.9); }
+                if (type === 'star') { const v = []; for (let i = 0; i < 10; i++) { const r = i % 2 ? .42 : 1, a = -Math.PI / 2 + i * Math.PI / 5; v.push([Math.cos(a) * r, Math.sin(a) * r]); } for (let i = 0; i < 10; i++) { const a = v[i], b = v[(i + 1) % 10]; for (let k = 0; k < 8; k++) { const f = k / 8; P((a[0] + (b[0] - a[0]) * f) * 3.4, (a[1] + (b[1] - a[1]) * f) * 3.4, c[0], R(60, 75), .012, .965, 1.8); } } }
+
+                if (type === 'palm')
+
+                    for (let m = 0; m < 8; m++) { const a = m / 8 * T + R(-.1, .1); for (let k = 0; k < 14; k++) { const s = 1 + k * .28; P(Math.cos(a) * s, Math.sin(a) * s, c[0], 80 + k * 2, .035, .98, 2, k > 10 ? 1 : 0); } }
+
+                // SPIRAL FIREWORK
+                if (type === 'spiral') {
+                    for (let i = 0; i < 160; i++) {
+                        const a = i * 0.18;
+                        const s = i * 0.025;
+
+                        P(
+                            Math.cos(a) * s,
+                            Math.sin(a) * s,
+                            c[i % 2],
+                            R(65, 100),
+                            0.025,
+                            0.985,
+                            2
+                        );
+                    }
+                }
+
+                // GALAXY FIREWORK
+                if (type === 'galaxy') {
+                    for (let i = 0; i < 220; i++) {
+                        const a = R(0, T);
+                        const s = R(1, 5);
+
+                        P(
+                            Math.cos(a) * s,
+                            Math.sin(a) * s,
+                            i % 3 === 0 ? '#ffffff' : c[i % 2],
+                            R(75, 120),
+                            0.018,
+                            0.982,
+                            2,
+                            1,
+                            1
+                        );
+                    }
+                }
+
+                // COMET FIREWORK
+                if (type === 'comet') {
+                    for (let i = 0; i < 12; i++) {
+                        const a = i * T / 12;
+
+                        for (let j = 0; j < 18; j++) {
+                            const s = j * 0.23;
+
+                            P(
+                                Math.cos(a) * s,
+                                Math.sin(a) * s,
+                                j % 3 === 0 ? '#ffffff' : c[0],
+                                R(65, 100),
+                                0.025,
+                                0.985,
+                                2
+                            );
+                        }
+                    }
+                }
+
+                // GOLDEN FOUNTAIN
+                if (type === 'fountain') {
+                    for (let i = 0; i < 180; i++) {
+                        const a = R(-Math.PI, 0);
+                        const s = R(2, 5);
+
+                        P(
+                            Math.cos(a) * s,
+                            Math.sin(a) * s,
+                            i % 3 === 0 ? '#ffffff' : '#ffd36b',
+                            R(65, 110),
+                            0.065,
+                            0.982,
+                            2,
+                            1
+                        );
+                    }
+                }
+
+                for (let i = 0; i < 20; i++) { const a = R(0, T), s = R(1, 5); P(Math.cos(a) * s, Math.sin(a) * s, '#fff', R(8, 16), .02, .93, 1.4); }
+                
+            }
+            function bg(tm) {
+                const gr = g1.createLinearGradient(0, 0, 0, H); gr.addColorStop(0, '#03040c'); gr.addColorStop(.55, '#0b1030'); gr.addColorStop(.85, '#2a1740'); gr.addColorStop(1, '#6b2a1f'); g1.fillStyle = gr; g1.fillRect(0, 0, W, H);
+                g1.fillStyle = '#fff'; stars.forEach(s => { g1.globalAlpha = .3 + .7 * Math.abs(Math.sin(tm * .001 * s.sp + s.p)); g1.fillRect(s.x * W, s.y * H * .65, s.r, s.r); }); g1.globalAlpha = 1;
+                if (flash.a > .01) { const f = g1.createRadialGradient(flash.x, flash.y, 0, flash.x, flash.y, 280); f.addColorStop(0, flash.c); f.addColorStop(1, 'rgba(0,0,0,0)'); g1.globalAlpha = flash.a * .32; g1.fillStyle = f; g1.fillRect(0, 0, W, H); g1.globalAlpha = 1; flash.a *= .9; }
+            }
+            function fx() {
+                g2.globalCompositeOperation = 'destination-out'; g2.fillStyle = 'rgba(0,0,0,.16)'; g2.fillRect(0, 0, W, H); g2.globalCompositeOperation = 'lighter'; g2.lineCap = 'round';
+                for (let i = rockets.length - 1; i >= 0; i--) {
+                    const r = rockets[i]; r.y += r.vy; r.vy *= .986; r.x += Math.sin(r.y * .06) * .25; g2.globalAlpha = 1; g2.strokeStyle = '#fff1c0'; g2.lineWidth = 2.2; g2.beginPath(); g2.moveTo(r.x, r.y); g2.lineTo(r.x, r.y + 9); g2.stroke();
+                    parts.push({ x: r.x, y: r.y + 9, px: r.x, py: r.y + 9, vx: R(-.3, .3), vy: R(.2, .8), col: '#ffb347', life: 16, max: 16, g: .03, dr: .97, w: 1.3, crk: 0, tw: 0 });
+                    if (r.y <= r.ty || r.vy > -1.2) { burst(r.x, r.y, r.c, r.type); rockets.splice(i, 1); }
+                }
+                for (let i = parts.length - 1; i >= 0; i--) {
+                    const p = parts[i]; p.px = p.x; p.py = p.y; p.vx *= p.dr; p.vy = p.vy * p.dr + p.g; p.x += p.vx; p.y += p.vy; p.life--;
+                    const al = Math.min(1, p.life / (p.max * .5)); g2.globalAlpha = (p.tw && Math.random() < .4) ? al * .3 : al; g2.strokeStyle = p.col; g2.lineWidth = p.w; g2.beginPath(); g2.moveTo(p.px, p.py); g2.lineTo(p.x, p.y); g2.stroke();
+                    if (p.life <= 0) { if (p.crk) for (let k = 0; k < 4; k++) { const a = R(0, T), s = R(.6, 1.8); parts.push({ x: p.x, y: p.y, px: p.x, py: p.y, vx: Math.cos(a) * s, vy: Math.sin(a) * s, col: '#fff2c0', life: 12, max: 12, g: .02, dr: .95, w: 1.2, crk: 0, tw: 0 }); } parts.splice(i, 1); }
+                }
+                g2.globalAlpha = 1;
+            }
+            function wins(x0, x1, y0, y1, tm, seed) { let k = 0; for (let y = y0; y < y1 - 8; y += 17)for (let x = x0 + 8; x < x1 - 8; x += 16) { k++; const h = (k * 37 + seed * 11) % 7; if (h < 2) continue; g3.globalAlpha = .65 + .35 * Math.sin(tm * .002 + k * 1.3); g3.fillStyle = h === 6 ? '#ffe9a8' : '#ffb54a'; g3.fillRect(x, y, 6, 9); } g3.globalAlpha = 1; }
+            function lights(x0, x1, y, tm) { for (let x = x0; x < x1; x += 12) { const yy = y + 7 * Math.sin(((x - x0) / 36 % 1) * Math.PI), a = .5 + .5 * Math.sin(tm * .004 + x * .7); g3.fillStyle = (x / 12 | 0) % 2 ? '#ffd36b' : '#ff8f3a'; g3.globalAlpha = .14 * a; g3.beginPath(); g3.arc(x, yy, 6, 0, T); g3.fill(); g3.globalAlpha = .4 + .6 * a; g3.beginPath(); g3.arc(x, yy, 1.9, 0, T); g3.fill(); } g3.globalAlpha = 1; }
+            function diyas(tm) {
+                const n = Math.floor(W / 30); for (let i = 0; i < n; i++) {
+                    const x = (i + .5) * W / n, y = BY + 17, f = .82 + .18 * Math.sin(tm * .013 + i * 2.1) + R(-.05, .05);
+                    g3.fillStyle = 'rgba(255,150,40,' + (.16 * f) + ')'; g3.beginPath(); g3.arc(x, y - 6, 20, 0, T); g3.fill();
+                    g3.fillStyle = '#b4501b'; g3.beginPath(); g3.ellipse(x, y, 11, 5, 0, 0, Math.PI); g3.fill(); g3.fillStyle = '#e98a3b'; g3.fillRect(x - 11, y - 1, 22, 1.6);
+                    g3.fillStyle = '#ffc247'; g3.beginPath(); g3.ellipse(x, y - 6 * f - 2, 2.8, 6.5 * f, 0, 0, T); g3.fill(); g3.fillStyle = '#fff4cc'; g3.beginPath(); g3.ellipse(x, y - 4, 1.3, 3.2 * f, 0, 0, T); g3.fill();
+                }
+            }
+
+
+            function fg(tm) {
+
+                g3.clearRect(0, 0, W, H);
+
+                // UNIVERSITY BUILDING
+                g3.fillStyle = '#070a18';
+
+                [[.06, .26, 52], [.26, .34, 70], [.34, .66, 86],
+                [.66, .74, 70], [.74, .94, 52]].forEach(b =>
+                    g3.fillRect(b[0] * W, BY - b[2], (b[1] - b[0]) * W, b[2] + 2)
+                );
+
+                g3.beginPath();
+                g3.moveTo(.34 * W, BY - 86);
+                g3.lineTo(.5 * W, BY - 112);
+                g3.lineTo(.66 * W, BY - 86);
+                g3.fill();
+
+                g3.fillRect(.46 * W, BY - 135, .08 * W, 135);
+
+                g3.beginPath();
+                g3.arc(.5 * W, BY - 135, .045 * W, Math.PI, 0);
+                g3.fill();
+
+                g3.fillRect(.5 * W - 1, BY - 135 - .045 * W - 14, 2, 14);
+                g3.fillRect(0, BY, W, 40);
+
+
+                // BUILDING WINDOWS
+                wins(.06 * W, .26 * W, BY - 52, BY, tm, 1);
+                wins(.26 * W, .34 * W, BY - 70, BY, tm, 2);
+                wins(.34 * W, .66 * W, BY - 86, BY, tm, 3);
+                wins(.66 * W, .74 * W, BY - 70, BY, tm, 4);
+                wins(.74 * W, .94 * W, BY - 52, BY, tm, 5);
+                wins(.47 * W, .53 * W, BY - 130, BY - 88, tm, 6);
+
+
+                // DECORATIVE LIGHTS
+                lights(.34 * W, .66 * W, BY - 86, tm);
+                lights(.06 * W, .26 * W, BY - 52, tm);
+                lights(.74 * W, .94 * W, BY - 52, tm);
+
+
+                // DIYAS
+                diyas(tm);
+
+
+                // RESPONSIVE SIZE
+                const s = Math.min(1, W / 680);
+                const fs = n => Math.round(n * s);
+                const cx = W / 2;
+
+                const ta = Math.min(1, tm / 1800);
+                const e = 1 - Math.pow(1 - ta, 3);
+
+
+                // BACKGROUND GLOW
+                const sc = g3.createRadialGradient(
+                    cx, 120 * s, 0,
+                    cx, 120 * s, 250 * s
+                );
+
+                sc.addColorStop(0, 'rgba(3,5,14,.5)');
+                sc.addColorStop(1, 'rgba(3,5,14,0)');
+
+                g3.fillStyle = sc;
+                g3.fillRect(0, 0, W, 260);
+
+
+                g3.save();
+
+                g3.globalAlpha = e;
+                g3.textAlign = 'center';
+
+
+                // GOLDEN GRADIENT
+                const lg = g3.createLinearGradient(
+                    cx - 30, 0,
+                    cx + 30, 0
+                );
+
+                lg.addColorStop(0, '#fff0b8');
+                lg.addColorStop(1, '#e8a317');
+
+
+                // =================================
+                // SHOBHIT UNIVERSITY ORIGINAL LOGO
+                // =================================
+
+                // SHOBHIT UNIVERSITY LOGO
+
+                if (logo.complete && logo.naturalWidth > 0) {
+
+                    // const logoWidth = 100 * s;
+                    // const logoHeight = 65 * s;
+
+                    // const logoX = 25 * s;
+                    // const logoY = 15 * s;
+
+                    const logoWidth = 120 * s;
+                    const logoHeight = 75 * s;
+
+                    const logoX = 20 * s;
+                    const logoY = 15 * s;
+
+                    g3.save();
+
+                    g3.globalAlpha = e;
+
+                    g3.shadowColor = '#ffbf45';
+                    g3.shadowBlur = 22;
+
+                    g3.drawImage(
+                        logo,
+                        logoX,
+                        logoY,
+                        logoWidth,
+                        logoHeight
+                    );
+
+                    g3.restore();
+                }
+
+
+                // =================================
+                // UNIVERSITY NAME
+                // =================================
+
+                g3.shadowColor = 'rgba(255,170,40,.55)';
+                g3.shadowBlur = 14;
+
+                g3.fillStyle = '#fff6dc';
+
+                g3.letterSpacing = fs(7) + 'px';
+
+                g3.font = '500 ' + fs(28) + 'px Georgia,serif';
+
+                g3.fillText(
+                    'SHOBHIT UNIVERSITY',
+                    cx,
+                    118 * s
+                );
+
+                g3.letterSpacing = '0px';
+
+                g3.shadowBlur = 0;
+
+
+                // =================================
+                // GOLDEN DECORATION LINE
+                // =================================
+
+                const dw = 120 * s * e;
+
+                g3.strokeStyle = '#e8a317';
+                g3.lineWidth = 1;
+
+                g3.beginPath();
+
+                g3.moveTo(cx - dw - 8, 135 * s);
+                g3.lineTo(cx - 8, 135 * s);
+
+                g3.moveTo(cx + 8, 135 * s);
+                g3.lineTo(cx + dw + 8, 135 * s);
+
+                g3.stroke();
+
+
+                // CENTER DIAMOND
+                g3.fillStyle = '#ffc247';
+
+                g3.beginPath();
+
+                g3.moveTo(cx, 130 * s);
+                g3.lineTo(cx + 5, 135 * s);
+                g3.lineTo(cx, 140 * s);
+                g3.lineTo(cx - 5, 135 * s);
+
+                g3.fill();
+
+
+                // =================================
+                // SHUBH DEEPAWALI HINDI TEXT
+                // =================================
+
+                const hg = g3.createLinearGradient(
+                    0, 150 * s,
+                    0, 196 * s
+                );
+
+                hg.addColorStop(0, '#fff3c4');
+                hg.addColorStop(1, '#f0a500');
+
+                g3.shadowColor = 'rgba(255,160,30,.7)';
+                g3.shadowBlur = 22;
+
+                g3.fillStyle = hg;
+
+                g3.font =
+                    '600 ' + fs(52) +
+                    'px "Noto Serif Devanagari","Nirmala UI",Mangal,serif';
+
+                g3.fillText(
+                    'शुभ दीपावली',
+                    cx,
+                    190 * s
+                );
+
+                g3.shadowBlur = 0;
+
+
+                // ENGLISH GREETING
+                g3.fillStyle = '#f5dca0';
+
+                g3.letterSpacing = fs(6) + 'px';
+
+                g3.font = '400 ' + fs(13) + 'px Georgia,serif';
+
+                g3.fillText(
+                    'SHUBH DEEPAWALI',
+                    cx,
+                    214 * s
+                );
+
+                g3.letterSpacing = '0px';
+
+
+                g3.restore();
+            }
+
+            let next = 0; const t0 = performance.now();
+            function frame(now) {
+                const tm = now - t0; if (now > next) { launch(); if (Math.random() < .3) setTimeout(() => launch(), 250); next = now + R(750, 1400); }
+                bg(tm); fx(); fg(tm); requestAnimationFrame(frame);
+            }
+            [500, 800, 1100].forEach(d => setTimeout(() => launch(), d));
+            w.addEventListener('pointerdown', e => {
+
+    if (!on) {
+        on = true;
+    }
+
+    // Start background Diwali music
+    playDiwaliMusic();
+
+    // Resume fireworks sound
+    if (ac && ac.state === "suspended") {
+        ac.resume();
+    }
+
+    const r = w.getBoundingClientRect();
+
+    launch(
+        e.clientX - r.left,
+        Math.min(e.clientY - r.top, BY - 120)
+    );
+});
+            document.getElementById('nw').onclick = () => launch();
+            document.getElementById('snd').onclick = function () { on = !on; if (on) { if (!ac) { const C = window.AudioContext || window.webkitAudioContext; try { ac = new C(); } catch (e) { } } if (ac && ac.state === 'suspended') ac.resume(); snd('boom', W / 2); } this.textContent = on ? 'Awaaz band karo' : 'Awaaz chalu karo'; };
+            // Automatically initialize audio
+            async function autoStartAudio() {
+                try {
+                    const C = window.AudioContext || window.webkitAudioContext;
+
+                    if (!ac) {
+                        ac = new C();
+                    }
+
+                    await ac.resume();
+
+                    if (ac.state === "running") {
+                        on = true;
+                        snd('boom', W / 2);
+                    }
+
+                } catch (e) {
+                    console.log("Audio autoplay blocked by browser");
+                }
+            }
+
+            autoStartAudio();
+            requestAnimationFrame(frame);
+
+
+        </script>
+    </div>
+    <audio id="diwaliMusic" loop>
+    <source src="./diwali-music.mp3" type="audio/mpeg">
+</audio>
+
+<button onclick="document.getElementById('diwaliMusic').play()">
+    Play Music Test
+</button>
+</body>
+
+</html>
